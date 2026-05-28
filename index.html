@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo 888 - Professional Trading Hub</title>
+    <!-- Tailwind CSS CDN for Ultra Premium UI Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Babel Engines via CDN for Single File Standalone Build -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono-font { font-family: 'JetBrains Mono', monospace; }
+        /* Premium custom scrollbar styling */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #0c1017; }
+        ::-webkit-scrollbar-thumb { background: #242f41; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[#080b10] text-[#e2e8f0] antialiased selection:bg-emerald-500 selection:text-black">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            // --- PERSISTENT STATE DIRECTORIES (LocalStorage Backup Engine) ---
+            const [balance, setBalance] = useState(() => {
+                const saved = localStorage.getItem('d888_core_bal');
+                return saved !== null ? parseFloat(saved) : 0.00;
+            });
+
+            const [userProfile, setUserProfile] = useState(() => {
+                const saved = localStorage.getItem('d888_user_profile');
+                return saved ? JSON.parse(saved) : { verified: false, name: '', phone: '', age: '', gender: '' };
+            });
+
+            const [hasBonus, setHasBonus] = useState(() => {
+                return localStorage.getItem('d888_bonus_claim') === 'true';
+            });
+
+            const [ledger, setLedger] = useState(() => {
+                const saved = localStorage.getItem('d888_ledger_log');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            // --- DEPLOYMENT UI CONTROLLERS ---
+            const [activeTab, setActiveTab] = useState('terminal'); 
+            const [copied, setCopied] = useState(false);
+            const [showVerifyModal, setShowVerifyModal] = useState(false);
+            
+            // Notification State Mechanics
+            const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+
+            // Form Input States
+            const [smsInput, setSmsInput] = useState('');
+            const [withdrawName, setWithdrawName] = useState('');
+            const [withdrawAcc, setWithdrawAcc] = useState('');
+            const [withdrawAmt, setWithdrawAmt] = useState('');
+            
+            // Verification Reg Input States
+            const [regName, setRegName] = useState('');
+            const [regPhone, setRegPhone] = useState('');
+            const [regPass, setRegPass] = useState('');
+            const [regAge, setRegAge] = useState('');
+            const [regGender, setRegGender] = useState('Male');
+
+            // Synchronize with LocalStorage on State Alterations
+            useEffect(() => { localStorage.setItem('d888_core_bal', balance); }, [balance]);
+            useEffect(() => { localStorage.setItem('d888_user_profile', JSON.stringify(userProfile)); }, [userProfile]);
+            useEffect(() => { localStorage.setItem('d888_bonus_claim', hasBonus); }, [hasBonus]);
+            useEffect(() => { localStorage.setItem('d888_ledger_log', JSON.stringify(ledger)); }, [ledger]);
+
+            // --- ENGINE TRIGGER FUNCTIONS ---
+            const triggerNotification = (message, type = 'success') => {
+                setNotification({ show: true, message, type });
+                setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 5000);
+            };
+
+            const executeBonusClaim = () => {
+                if (!hasBonus) {
+                    setBalance(prev => prev + 2.00);
+                    setHasBonus(true);
+                    setLedger(prev => [
+                        { id: Date.now(), title: 'System Welcome Bonus 🎁', delta: 2.00, flag: 'CREDIT', status: 'Settled', stamp: new Date().toLocaleString() },
+                        ...prev
+                    ]);
+                    triggerNotification("Account credited successfully with a $2.00 signup bonus!", 'success');
+                }
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText('1000705884987');
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+                triggerNotification("CBE corporate account number copied to clipboard.", 'success');
+            };
+
+            const submitVerificationForm = (e) => {
+                e.preventDefault();
+                if (!regName || !regPhone || !regPass || !regAge) {
+                    triggerNotification("Please fill out all mandatory registration fields.", 'error');
+                    return;
+                }
+                if (parseInt(regAge) < 18) {
+                    triggerNotification("Access Denied: You must be 18 years or older to access financial trading networks.", 'error');
+                    return;
+                }
+
+                setUserProfile({
+                    verified: true,
+                    name: regName,
+                    phone: regPhone,
+                    age: regAge,
+                    gender: regGender
+                });
+                setShowVerifyModal(false);
+                triggerNotification("Profile verification check authorized successfully. Account status: VERIFIED.", 'success');
+            };
+
+            const processesDepositIntent = (e) => {
+                e.preventDefault();
+                if (!smsInput.trim()) return;
+
+                // Advanced regex structural check for "FT [space] [amount]" requirement
+                const structuralRegex = /\bFT\s+(\d+)\b/i;
+                const matchResult = smsInput.match(structuralRegex);
+
+                if (!matchResult) {
+                    triggerNotification("Invalid SMS sequence format. Text must contain the precise 'FT [space] [Amount]' schema validation code.", "error");
+                    return;
+                }
+
+                const parsedAmountInEtb = parseFloat(matchResult[1]);
+                // Dynamic spot rate foreign conversion logic simulation (Approx 1 USD = 120 ETB conversion scaling)
+                const computedUsdAllocation = parseFloat((parsedAmountInEtb / 120).toFixed(2));
+
+                if (computedUsdAllocation <= 0) {
+                    triggerNotification("Invalid processed balance value detected.", "error");
+                    return;
+                }
+
+                setLedger(prev => [
+                    { id: Date.now(), title: 'CBE Direct Deposit Link', delta: computedUsdAllocation, flag: 'CREDIT', status: 'Pending ⏳', stamp: new Date().toLocaleString() },
+                    ...prev
+                ]);
+
+                triggerNotification(`Deposit code matched. Pending validation for $${computedUsdAllocation} USD equivalent allocation.`, "success");
+                setSmsInput('');
+            };
+
+            const processWithdrawalIntent = (e) => {
+                e.preventDefault();
+                const numericAmountValue = parseFloat(withdrawAmt);
+
+                if (!withdrawName || !withdrawAcc || !withdrawAmt) {
+                    triggerNotification("All bank transaction ledger form sections require complete details.", "error");
+                    return;
+                }
+                if (numericAmountValue < 35) {
+                    triggerNotification("Transaction limit restriction: Minimum withdrawal threshold value is set to $35 USD.", "error");
+                    return;
+                }
+                if (numericAmountValue > balance) {
+                    triggerNotification("Insolvent account capital. Available trading balance is insufficient.", "error");
+                    return;
+                }
+
+                setBalance(prev => prev - numericAmountValue);
+                setLedger(prev => [
+                    { id: Date.now(), title: 'Corporate Bank Wire Withdrawal', delta: numericAmountValue, flag: 'DEBIT', status: 'Processing 💸', stamp: new Date().toLocaleString() },
+                    ...prev
+                ]);
+
+                triggerNotification(`Withdrawal request of $${numericAmountValue} USD dispatched safely for liquidation.`, "success");
+                setWithdrawName('');
+                setWithdrawAcc('');
+                setWithdrawAmt('');
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col bg-[#080b10] text-[#e2e8f0]">
+                    
+                    {/* CUSTOM ALERT CANVAS SYSTEM */}
+                    {notification.show && (
+                        <div className="fixed top-6 right-6 z-[100] max-w-sm w-full animate-slide-in">
+                            <div className={`p-4 rounded-xl border backdrop-blur-xl flex items-start gap-3 shadow-2xl transition-all duration-300 ${notification.type === 'success' ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400' : 'bg-rose-950/80 border-rose-500/50 text-rose-400'}`}>
+                                <span className="text-xl">{notification.type === 'success' ? '⚡' : '⚠️'}</span>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-sm text-white uppercase tracking-wider">{notification.type === 'success' ? 'System Broadcast' : 'Execution Halt'}</h4>
+                                    <p className="text-xs mt-0.5 leading-relaxed font-medium opacity-90">{notification.message}</p>
+                                </div>
+                                <button onClick={() => setNotification({ ...notification, show: false })} className="text-white/40 hover:text-white font-bold text-xs">✕</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CORE HEADLINE MONITOR PLATFORM CONTROLLER */}
+                    <header className="bg-[#0e131f] border-b border-[#1b2537] sticky top-0 z-40 px-6 py-4 shadow-xl">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                            
+                            {/* App Identity & Brand Shield */}
+                            <div className="flex items-center space-x-4">
+                                <div className="bg-gradient-to-tr from-emerald-500 to-teal-600 px-3.5 py-1.5 rounded-xl text-black font-extrabold text-xl tracking-tighter shadow-lg shadow-emerald-500/20">
+                                    888
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-black tracking-wider text-white">DEMO <span className="text-emerald-400">888</span></h1>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Institutional Trading Matrix</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Verification Dynamic Status Metric Panel */}
+                            <div className="flex items-center flex-wrap justify-center gap-4">
+                                <div className="bg-[#141b2b] border border-[#222d42] px-4 py-2 rounded-xl flex items-center gap-3">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-[#1e293b] flex items-center justify-center">
+                                        <span className={`h-1.5 w-1.5 rounded-full ${userProfile.verified ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Account Status</p>
+                                        <p className={`text-xs font-black uppercase tracking-wide ${userProfile.verified ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                            {userProfile.verified ? 'VERIFIED Account' : 'UNVERIFIED'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#141b2b] border border-[#222d42] px-5 py-2 rounded-xl text-right">
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Available Assets Balance (USD)</p>
+                                    <p className="text-xl font-mono font-bold text-emerald-400 tracking-tight">${balance.toFixed(2)}</p>
+                                </div>
+
+                                {!hasBonus && (
+                                    <button 
+                                        onClick={executeBonusClaim} 
+                                        className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 active:scale-95 transition-all"
+                                    >
+                                        Claim $2 Bonus 🎁
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* MAIN INTERACTION LAYOUT ECOSYSTEM */}
+                    <div className="max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-5 flex-1">
+                        
+                        {/* TERMINAL NAV-PANEL CONTROLS */}
+                        <nav className="bg-[#0e131f] p-4 rounded-2xl border border-[#1b2537] space-y-1.5 h-fit shadow-2xl">
+                            <p className="text-[10px] font-black text-gray-500 px-3 uppercase tracking-widest mb-3">Live Terminal Deck</p>
+                            
+                            {/* Verification Triggers */}
+                            <div className="p-2 mb-3 bg-[#131a29] border border-[#1f2a3f] rounded-xl flex flex-col gap-2">
+                                <button 
+                                    onClick={() => setActiveTab('terminal')} 
+                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'terminal' ? 'bg-[#1b2537] text-white' : 'hover:bg-[#151d2c] text-gray-400 hover:text-gray-200'}`}
+                                >
+                                    <span>🏠 Home Terminal</span>
+                                    <span className="text-gray-600">»</span>
+                                </button>
+                                
+                                <button 
+                                    onClick={() => setShowVerifyModal(true)} 
+                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${userProfile.verified ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' : 'bg-amber-950/20 border-amber-500/30 text-amber-400 hover:bg-amber-950/40'}`}
+                                >
+                                    <span>🛡️ {userProfile.verified ? 'Verified Profile' : 'Verify Account ID'}</span>
+                                    <span className="bg-[#080b10] px-1.5 py-0.5 rounded text-[9px]">{userProfile.verified ? 'PASS' : 'REQD'}</span>
+                                </button>
+                            </div>
+
+                            <p className="text-[10px] font-black text-gray-500 px-3 uppercase tracking-widest pt-2 mb-2">Liquidity Operations</p>
+                            
+                            {/* Advanced Action Hub containing inner dropdown actions */}
+                            <button 
+                                onClick={() => setActiveTab('deposit')} 
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'deposit' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-black shadow-lg shadow-emerald-600/10 font-bold' : 'hover:bg-[#141b2b] text-gray-400 hover:text-white'}`}
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <span>📥</span>
+                                    <span>Deposit Capital (CBE)</span>
+                                </div>
+                                <span className="text-[10px] border border-current px-1.5 py-0.2 rounded font-bold uppercase font-mono">LINK</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setActiveTab('withdraw')} 
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'withdraw' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-black shadow-lg shadow-emerald-600/10 font-bold' : 'hover:bg-[#141b2b] text-gray-400 hover:text-white'}`}
+                            >
+                                <span>📤</span>
+                                <span>Withdraw Settlement</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setActiveTab('copytrading')} 
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab === 'copytrading' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-black shadow-lg shadow-emerald-600/10 font-bold' : 'hover:bg-[#141b2b] text-gray-400 hover:text-white'}`}
+                            >
+                                <span>👥</span>
+                                <span>Expert Copy Trading</span>
+                            </button>
+                        </nav>
+
+                        {/* DESKTOP INTERFACE CENTRAL ENGINE */}
+                        <main className="lg:col-span-3 bg-[#0e131f] p-6 rounded-2xl border border-[#1b2537] shadow-2xl flex flex-col justify-between">
+                            <div>
+                                
+                                {/* HOME WORKSPACE COMPONENT LAYER */}
+                                {activeTab === 'terminal' && (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="bg-[#080b10] p-4 rounded-xl border border-[#172030]">
+                                                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Trading Account Mode</p>
+                                                <p className="text-md font-bold text-white mt-1 flex items-center gap-1.5">
+                                                    Institutional Paper <span className="text-[9px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded uppercas
